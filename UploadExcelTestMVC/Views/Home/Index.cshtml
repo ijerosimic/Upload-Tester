@@ -1,0 +1,357 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<link href="~/lib/sweetalert/dist/sweetalert.css" rel="stylesheet" />
+<link href="~/lib/DataTable/datatables.min.css" rel="stylesheet" />
+<link href="~/lib/DataTable/ColReorder-1.5.0/css/colReorder.dataTables.min.css" rel="stylesheet" />
+<style>
+    .chosenColumnStyle {
+        background-color: #d0e6d5;
+    }
+
+    @@media all and (min-width: 768px) {
+        .desktop-padding {
+            padding-right: 15px !important;
+        }
+    }
+
+    table.ks-table {
+        background-color: white;
+        border-collapse: separate;
+        border: solid black 1px;
+        border-radius: 6px;
+        -moz-border-radius: 6px;
+    }
+
+        table.ks-table > thead > tr > th {
+            background-color: white;
+            color: black;
+            border: 2px;
+        }
+
+        table.ks-table > tbody > tr > td {
+            border: 0px;
+            border-top: 1px solid #e7eaec;
+        }
+
+    div.DTCR_pointer {
+        margin-left: -10px;
+        width: 0;
+        height: 0 !important;
+        border-style: solid;
+        border-width: 10px 10px 0 10px;
+        border-color: #0259c4 transparent transparent transparent;
+        background: transparent;
+    }
+
+    .disable-select {
+        -webkit-touch-callout: none; /* iOS Safari */
+        -webkit-user-select: none; /* Chrome/Safari/Opera */
+        -moz-user-select: none; /* Firefox */
+        -ms-user-select: none; /* Internet Explorer/Edge */
+        user-select: none; /* Non-prefixed version, currently supported by any browser but < IE9 */
+    }
+</style>
+
+<div class="col-lg-12">
+    <form method="post" enctype="multipart/form-data" id="form">
+        <div class="row">
+            <div class="col-lg-4 col-md-8 col-xs-12">
+                <div class="input-group mb-3">
+                    <div class="input-group-prepend">
+                        <button class="btn btn-info" type="button" id="btnChoose">Odaberite datoteku</button>
+                    </div>
+                    <input class="form-control" type="text" id="fileName" disabled />
+                </div>
+                <input type="file" id="fUpload" name="files" class="collapse form-control-file" style="border:3px solid #17a2b8;" />
+            </div>
+            <div class="col-lg-2 col-md-4 col-xs-12">
+                <select id="delimiter-select" class="form-control desktop-padding" data-toggle="tooltip" data-placement="bottom" title="Ukoliko se radi o Excel datoteci nije potrebno odabrati delimiter!" style="margin-bottom:0.7em;">
+                    <option value="-1" id="null"> --- Odaberite delimiter ---</option>
+                    <option value="," id="comma"> Zarez [ , ]</option>
+                    <option value=":" id="colon"> Dvotočka [ : ]</option>
+                    <option value=";" id="semicolon"> Točka zarez [ ; ]</option>
+                    <option value="\t" id="tab"> Tab [ ↹ ]</option>
+                    <option value="|" id="pipe"> Vertikalna linija [ | ]</option>
+                    <option value="^" id="caret"> Caret [ ^ ]</option>
+                    <option value="~" id="tilde"> Tilda [ ~ ]</option>
+                </select>
+            </div>
+            <div class="col-lg-2 col-md-4 col-xs-12">
+                <input type="button" id="btnPreview" class="btn btn-info btn-block" style="cursor:pointer; text-align:center;" value="Prikaži">
+            </div>
+        </div>
+    </form>
+    <br />
+    <div class="col-md-8" id="divUpload" style="display:none;">
+        <div class="form-group row">
+            <div class="alert alert-danger" role="alert">
+                <p>U bazu će biti učitane prve 4 kolone!</p>
+                <p>Kolone je moguće premještati klikom miša na brojčanu oznaku kolone te povlačenjem u željenom pravcu.</p>
+                <p style="font-weight:bold;">Kako bi se podaci ispravno spremili u bazu potrebno je kolone složiti u slijedećem redoslijedu:</p>
+                <ol type="1">
+                    <li>ID zaposlenika</li>
+                    <li>Ime zaposlenika</li>
+                    <li>Prezime zaposlenika</li>
+                    <li>Sati</li>
+                </ol>
+                <p>Pritiskom na gumb "Pripremi kolone za unos" program će omogućiti gumb za učitavanje kolona.</p>
+                <p>Kolone je moguće premještati sve do pritiska na gumb "Učitaj označene kolone". Klikom na gumb "Prikaži" moguće je resetirati poredak kolona.</p>
+                <p style="font-weight:bold;">Prije pritiska na gumb "Učitaj označene kolone" provjerite da li su kolone ispravno posložene i podaci u njima točni!</p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-3 col-md-6 col-xs-12 desktop-padding" style="padding-left:0px; padding-right:0px;">
+                <button type="button" id="btnPrepare" class="btn btn-success" style="cursor:pointer; text-align:center; margin-bottom:0.7em; width:100%;">Pripremi kolone za unos</button>
+            </div>
+            <div class="col-lg-3 col-md-6 col-xs-12" style="padding:0px;">
+                <button type="button" id="btnUpload" class="btn btn-danger" style="cursor:pointer; text-align:center; display:none; margin-bottom:0.7em; width:100%;" disabled>Učitaj označene kolone</button>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-12 col-md-12 col-xs-12">
+        <div class="row">
+            <div class="tableContainer" style="width: 100%;">
+                <table class="table table-responsive table-bordered ks-table disable-select" id="table" style="width:100%; border:0; border-spacing:0; border-color:red;" cellpadding="0" cellspacing="0"></table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="~/lib/jquery/jquery-3.3.1.js"></script>
+<script src="~/lib/bootstrap/dist/js/bootstrap.js"></script>
+<script src="~/lib/sweetalert/dist/sweetalert.min.js"></script>
+<script src="~/lib/DataTable/datatables.min.js"></script>
+<script src="~/lib/DataTable/ColReorder-1.5.0/js/colReorder.dataTables.js"></script>
+
+<script>
+    let prepared = false;
+    let dt;
+
+    $(function () {
+        $('[data-toggle="tooltip"]').tooltip()
+    })
+
+    $("#btnChoose").on('click', function (e) {
+        e.preventDefault();
+        $("#fUpload").trigger('click');
+    });
+
+    $("#fUpload").on('change', function () {
+        const name = $('#fUpload').prop('files')[0].name;
+        console.log(name);
+        $("#fileName").val(name);
+    });
+
+    $("#btnPrepare").on('click', function () {
+        $("#btnUpload").show();
+        $("#btnUpload").prop('disabled', false);
+        prepared = true;
+        markColsForImport();
+    });
+
+    $('#btnPreview').on('click', function () {
+        const fileExtension = ['xls', 'xlsx', 'csv', 'txt'];
+        const filename = $('#fUpload').val();
+        //const filename = $("#fileDropzone").val();
+        if (filename.length == 0) {
+            swal({
+                title: "Upozorenje!",
+                text: "Molimo odaberite datoteku.",
+                type: "warning",
+                confirmButtonColor: "#1ab394",
+                confirmButtonText: "OK",
+                html: true
+            });
+            return false;
+        }
+        else {
+            let extension = filename.replace(/^.*\./, '').toLowerCase();
+            if ($.inArray(extension, fileExtension) == -1) {
+                swal({
+                    title: "Upozorenje!",
+                    text: "Tip datoteke nije podržan! Molimo odaberite valjanu datoteku.",
+                    type: "warning",
+                    confirmButtonColor: "#1ab394",
+                    confirmButtonText: "OK",
+                    html: true
+                });
+                return false;
+            }
+        }
+
+        let fdata = new FormData();
+        const fileUpload = $("#fUpload").get(0);
+        const files = fileUpload.files;
+        const delimiter = $("#delimiter-select").val();
+        fdata.append('files', files[0]);
+        fdata.append(delimiter, 'delimiter');
+
+        $.ajax({
+            type: "POST",
+            url: '@Url.Action("Preview")',
+            beforeSend: function (xhr) {
+                xhr.setRequestHeader("XSRF-TOKEN",
+                    $('input:hidden[name="__RequestVerificationToken"]').val());
+            },
+            data: fdata,
+            contentType: false,
+            processData: false,
+            success: function (response) {
+                if (response.length === 0)
+                    swal({
+                        title: "Greška!",
+                        text: "Dogodila se greška kod pripreme datoteke! Molimo pokušajte ponovno.",
+                        type: "error",
+                        confirmButtonColor: "#F27474",
+                        confirmButtonText: "OK",
+                        html: true
+                    },
+                        function reload() {
+                            window.location.reload();
+                        });
+                else {
+                    if (typeof dt !== 'undefined') {
+                        dt.destroy();
+                    }
+
+                    $("#divUpload").show();
+                    $('#table').html(response);
+
+                    dt = $("#table").DataTable({
+                        dom: "t",
+                        columnDefs: [{
+                            orderable: false, targets: "_all"
+                        }],
+                        order: false,
+                        colReorder: true
+                    });
+
+                    dt.on('column-reorder', function () {
+                        if (prepared) markColsForImport();
+                    })
+                }
+            },
+            error: function (e) {
+                $('#divData').html(e.responseText);
+            }
+        });
+    })
+
+    $('#btnUpload').on('click', function () {
+        let log = [];
+
+        $("#table tr").each(function () {
+            let row = {
+                WorkerID: ($(this).find("td:first").text()),
+                WorkerName: ($(this).find("td:nth-child(2)").text()),
+                WorkerSurname: ($(this).find("td:nth-child(3)").text()),
+                Hours: ($(this).find("td:nth-child(4)").text())
+            }
+
+            if ((row.WorkerID !== null && row.workerID !== "" && row.WorkerID !== undefined)
+                && (row.WorkerName !== null && row.workerName !== "" && row.WorkerName !== undefined)
+                && (row.WorkerSurname !== null && row.WorkerSurname !== "" && row.WorkerSurname !== undefined)
+                && (row.Hours !== null && row.Hours !== "" && row.Hours !== undefined) && isNaN(row.WorkerID) === false) {
+                log.push(row);
+            }
+        });
+
+        if (log.length === 0)
+        {
+            swal({
+                title: "Greška u strukturi tablice!",
+                text: "Molimo provjerite da li su podaci u tablici ispravni te da li su kolone u tablici posložene ispravnim redoslijedom.",
+                type: "error",
+                confirmButtonColor: "#F27474",
+                confirmButtonText: "OK",
+                html: true
+            });
+        }
+
+        $.ajax({
+            type: "POST",
+            url: '@Url.Action("Upload")',
+            beforeSend: function (xhr) {
+                xhr.setRequestHeader("XSRF-TOKEN",
+                    $('input:hidden[name="__RequestVerificationToken"]').val());
+            },
+            data: JSON.stringify(log),
+            contentType: 'application/json; charset=utf-8',
+            dataType: 'json',
+            success: function (response) {
+                if (response === -1)
+                {
+                    swal({
+                        title: "Greška u strukturi tablice!",
+                        text: "Molimo provjerite da li su podaci u tablici ispravni te da li su kolone u tablici posložene ispravnim redoslijedom.",
+                        type: "error",
+                        confirmButtonColor: "#F27474",
+                        confirmButtonText: "OK",
+                        html: true
+                    });
+                }
+                else if (response === 0)
+                {
+                    swal({
+                        title: "Greška pri učitavanju datoteke!",
+                        text: "Dogodila se greška pri učitavanju datoteke u bazu. Molimo pokušajte ponovno.",
+                        type: "error",
+                        confirmButtonColor: "#F27474",
+                        confirmButtonText: "OK",
+                        html: true
+                    },
+                        function reload() {
+                            window.location.reload();
+                        });
+                }
+                else {
+                    swal({
+                        title: "Uspjeh",
+                        text: "Podaci su uspješno učitani u bazu!",
+                        type: "success",
+                        confirmButtonColor: "#1ab394",
+                        confirmButtonText: "OK",
+                        html: true
+                    },
+                        function reload() {
+                            window.location.reload();
+                        }
+                    );
+                }
+            },
+            error: function (e) {
+                swal({
+                    title: "Greška",
+                    text: "Dogodila se greška kod učitavanja podataka u bazu! Molimo pokušajte ponovno.",
+                    type: "error",
+                    confirmButtonColor: "#F27474",
+                    confirmButtonText: "OK",
+                    html: true
+                },
+                    function reload() {
+                        window.location.reload();
+                    });
+            }
+        });
+    })
+
+    function markColsForImport() {
+        for (let i = 1; i < 5; i++) {
+            $("#table").find("td:nth-child(" + i + ")").addClass("chosenColumnStyle");
+        }
+
+        let rows = $("#divData").find("tr");
+        let colCountMax = 0;
+        for (let i = 0; i < rows.length; i++) {
+            if (rows[i].childElementCount > colCountMax)
+                colCountMax = rows[i].childElementCount;
+        }
+
+        for (let i = 5; i < colCountMax; i++) {
+            $("#table").find("td:nth-child(" + i + ")").removeClass("chosenColumnStyle");
+        }
+    }
+
+</script>

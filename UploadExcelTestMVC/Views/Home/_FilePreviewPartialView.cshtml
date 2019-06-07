@@ -1,0 +1,79 @@
+﻿@using UploadExcelTestMVC.Models
+@model List<HoursLogTableTemp>
+
+@if (@Model != null)
+{
+    <table class="table table-responsive table-bordered ks-table" id="table" style="width:100%; border:0; border-spacing:0; border-color:red;" cellpadding="0" cellspacing="0">
+        <thead class="container">
+            <tr id="tableHeader" class="handle" style="cursor:pointer;">
+                @functions{
+                    int GetColCount(List<HoursLogTableTemp> Model)
+                    {
+                        var max = 0;
+
+                        foreach (var row in Model)
+                        {
+                            var temp = row.RowData.Count;
+                            if (temp > max)
+                                max = temp;
+                        }
+
+                        return max;
+                    }
+                }
+                @for (var col = 1; col <= @GetColCount(Model); col++)
+                {
+                    <th style="background:transparent;">@col</th>
+                }
+            </tr>
+        </thead>
+        <tbody id="divData">
+            @foreach (var row in Model)
+            {
+                if (row.RowID > 5)
+                {
+                    <tr id="@row.RowID" style="display:none;">
+                        @foreach (var col in row.RowData)
+                        {
+                            <td>@col</td>
+                        }
+                    </tr>
+                }
+                else
+                {
+                    <tr id="@row.RowID">
+                        @*@if (row.RowID == 0)
+        {
+           foreach (var col in row.RowData)
+            {
+                <td style="font-size:1.1rem; font-weight:bold;">@col</td>
+            }
+        }
+        else
+        {
+            foreach (var col in row.RowData)
+            {
+                <td>@col</td>
+            }
+        }*@
+
+                        @for (var i = 0; i < GetColCount(Model); i++)
+                        {
+                            var currentRowColCount = row.RowData.Count();
+
+                            if (i < currentRowColCount)
+                            {
+                                <td>@row.RowData[i]</td>
+                            }
+                            else
+                            {
+                                <td></td>
+                            }
+                        }
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+}
+
